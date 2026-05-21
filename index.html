@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>HyperJournal</title>
+  <style>
+    /* Base Variables (Light Default) */
+    :root {
+      --bg-color: #f4f4f9;
+      --container-bg: #ffffff;
+      --text-color: #333333;
+      --border-color: #dddddd;
+      --input-bg: #ffffff;
+      --input-border: #cccccc;
+      --header-color: #2c3e50;
+      --entry-bg: #ffffff;
+      --filter-bg: #ebedef;
+      --accent: #27ae60; 
+      --secondary: #34495e;
+    }
+
+    /* Dark Mode */
+    [data-theme="dark"] {
+      --bg-color: #121212;
+      --container-bg: #1e1e1e;
+      --text-color: #e0e0e0;
+      --border-color: #333333;
+      --input-bg: #2d2d2d;
+      --input-border: #444444;
+      --header-color: #ffffff;
+      --entry-bg: #252525;
+      --filter-bg: #2d2d2d;
+    }
+
+    /* Emerald (Green) */
+    [data-theme="emerald-light"] { --bg-color: #f0f9f4; --accent: #27ae60; --header-color: #145a32; }
+    [data-theme="emerald-dark"] { --bg-color: #0d1a12; --container-bg: #15291c; --text-color: #d5e9dd; --accent: #52be80; --border-color: #1e3d2a; --input-bg: #1e3d2a; --header-color: #ffffff; --entry-bg: #1e3d2a; --filter-bg: #15291c; }
+
+    /* Amethyst (Purple) */
+    [data-theme="amethyst-light"] { --bg-color: #f5f0f9; --accent: #8e44ad; --header-color: #4a235a; }
+    [data-theme="amethyst-dark"] { --bg-color: #1a161c; --container-bg: #251f29; --text-color: #eaddf0; --accent: #bb8fce; --border-color: #3b2f42; --input-bg: #2e2633; --header-color: #ffffff; --entry-bg: #2e2633; --filter-bg: #3b2f42; }
+
+    /* Ruby (Red) */
+    [data-theme="ruby-light"] { --bg-color: #fff5f5; --accent: #e74c3c; --header-color: #78281f; }
+    [data-theme="ruby-dark"] { --bg-color: #1c1414; --container-bg: #2c1a1a; --text-color: #f5e6e6; --accent: #ec7063; --border-color: #442a2a; --input-bg: #442a2a; --header-color: #ffffff; --entry-bg: #442a2a; --filter-bg: #2c1a1a; }
+
+    /* Sapphire (Blue) */
+    [data-theme="sapphire-light"] { --bg-color: #f0f4f9; --accent: #2980b9; --header-color: #154360; }
+    [data-theme="sapphire-dark"] { --bg-color: #14181c; --container-bg: #1a252f; --text-color: #e6f0f5; --accent: #5dade2; --border-color: #2a3d4d; --input-bg: #2a3d4d; --header-color: #ffffff; --entry-bg: #2a3d4d; --filter-bg: #1a252f; }
+
+    body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.5; background-color: var(--bg-color); color: var(--text-color); transition: 0.3s; }
+    .container { max-width: 700px; margin: auto; background: var(--container-bg); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); position: relative; }
+    
+    .theme-controls { position: absolute; top: 20px; right: 25px; display: flex; align-items: center; gap: 8px; }
+    #themeSelector { padding: 5px 10px; border-radius: 6px; background: var(--secondary); color: white; border: none; font-size: 0.8em; cursor: pointer; outline: none; }
+
+    .type-switcher { display: flex; background: var(--filter-bg); padding: 5px; border-radius: 8px; margin-bottom: 20px; }
+    .type-btn { flex: 1; padding: 10px; border: none; cursor: pointer; border-radius: 6px; font-weight: bold; background: none; color: var(--text-color); }
+    .type-btn.active { background: var(--container-bg); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+    .label-wrapper { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
+    .info-icon { display: inline-flex; justify-content: center; align-items: center; width: 16px; height: 16px; background: #7f8c8d; color: white; font-size: 11px; border-radius: 50%; cursor: help; position: relative; }
+    .info-icon:hover::after { content: attr(data-tooltip); position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: #000; color: white; padding: 8px; border-radius: 4px; font-size: 12px; width: 180px; z-index: 10; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+    input[type="number"], textarea, select { width: 100%; padding: 10px; border: 1px solid var(--input-border); border-radius: 6px; box-sizing: border-box; background: var(--input-bg); color: var(--text-color); font-family: inherit; }
+    
+    .btn-group { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+    button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; }
+    #submitBtn { background: var(--accent); flex-grow: 2; }
+    .secondary-btn { background: var(--secondary); }
+    #cancelBtn { background: #95a5a6; display: none; }
+
+    .entry { border: 1px solid var(--border-color); padding: 15px; margin: 15px 0; border-radius: 8px; background: var(--entry-bg); }
+    .entry.type-note { border-left: 5px solid #3498db; }
+    .entry.type-journal { border-left: 5px solid var(--accent); }
+    
+    .entry-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.85em; color: #888; }
+    .type-tag { font-weight: bold; text-transform: uppercase; font-size: 0.7em; padding: 2px 8px; border-radius: 10px; color: white; margin-right: 10px; }
+    .tag-note { background: #3498db; }
+    .tag-journal { background: var(--accent); }
+
+    .content-area { white-space: pre-wrap; word-wrap: break-word; }
+    .collapsed { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+    .toggle-btn { color: var(--accent); cursor: pointer; font-size: 0.75em; font-weight: bold; margin-top: 5px; display: block; }
+    #fileInput { display: none; }
+  </style>
+</head>
+<body data-theme="light">
+
+<div class="container">
+  <div class="theme-controls">
+    <select id="themeSelector" onchange="changeTheme(this.value)">
+      <option value="system">💻 System</option>
+      <option value="light">☀️ Light</option>
+      <option value="dark">🌙 Dark</option>
+      <option value="emerald-light">🌿 Emerald (L)</option>
+      <option value="emerald-dark">🌲 Emerald (D)</option>
+      <option value="amethyst-light">🌸 Amethyst (L)</option>
+      <option value="amethyst-dark">🔮 Amethyst (D)</option>
+      <option value="ruby-light">🍎 Ruby (L)</option>
+      <option value="ruby-dark">🍷 Ruby (D)</option>
+      <option value="sapphire-light">💎 Sapphire (L)</option>
+      <option value="sapphire-dark">🌌 Sapphire (D)</option>
+    </select>
+  </div>
+
+  <h1 id="formTitle">HyperJournal Entries</h1>
+  
+  <div class="type-switcher">
+    <button type="button" id="btnNoteMode" class="type-btn active" onclick="setMode('note')">Quick Note</button>
+    <button type="button" id="btnJournalMode" class="type-btn" onclick="setMode('journal')">Journal Entry</button>
+  </div>
+
+  <form id="logForm">
+    <div class="form-grid">
+      <div>
+        <div class="label-wrapper">
+          <label style="font-weight:bold; font-size:0.9em;">Physical (%)</label>
+          <span class="info-icon" data-tooltip="How much physical work could you do right now? Could you go for a run?">?</span>
+        </div>
+        <input type="number" id="p" min="-100" max="100" required>
+      </div>
+      <div>
+        <div class="label-wrapper">
+          <label style="font-weight:bold; font-size:0.9em;">Social (%)</label>
+          <span class="info-icon" data-tooltip="How much socialization could you do right now? Could you have a conversation?">?</span>
+        </div>
+        <input type="number" id="s" min="-100" max="100" required>
+      </div>
+      <div>
+        <div class="label-wrapper">
+          <label style="font-weight:bold; font-size:0.9em;">Emotional (%)</label>
+          <span class="info-icon" data-tooltip="How much emotional abuse could you take right now? Could you take someone talking you down?">?</span>
+        </div>
+        <input type="number" id="e" min="-100" max="100" required>
+      </div>
+    </div>
+
+    <div id="inputArea">
+      <label id="contentLabel" style="display:block; margin-bottom:5px; font-weight:bold;">Moment Content:</label>
+      <textarea id="mainContent" rows="3" required placeholder="What's happening right now?"></textarea>
+    </div>
+    
+    <div class="btn-group">
+      <button type="submit" id="submitBtn">Save Note</button>
+      <button type="button" id="cancelBtn" onclick="resetForm()">Cancel</button>
+      <button type="button" class="secondary-btn" onclick="exportData()">Backup</button>
+      <button type="button" class="secondary-btn" onclick="document.getElementById('fileInput').click()">Upload</button>
+      <input type="file" id="fileInput" accept=".json" onchange="importData(event)">
+    </div>
+  </form>
+
+  <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center;">
+    <h2>Entries</h2>
+    <select id="viewFilter" onchange="render()" style="width: auto;">
+      <option value="all">View All</option>
+      <option value="note">Notes Only</option>
+      <option value="journal">Journals Only</option>
+    </select>
+  </div>
+
+  <div id="display"></div>
+</div>
+
+<script>
+  let logs = JSON.parse(localStorage.getItem('batteryLogsSplit')) || [];
+  let currentMode = 'note'; 
+  let editingIndex = null;
+
+  // --- THEME ENGINE ---
+  function applySystemTheme() {
+    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  }
+
+  function changeTheme(theme) {
+    if (theme === 'system') {
+      applySystemTheme();
+    } else {
+      document.body.setAttribute('data-theme', theme);
+    }
+    localStorage.setItem('user-theme-choice', theme);
+  }
+
+  // Init Theme from Local Storage
+  const savedTheme = localStorage.getItem('user-theme-choice') || 'system';
+  document.getElementById('themeSelector').value = savedTheme;
+  changeTheme(savedTheme);
+
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener('change', () => {
+    if (localStorage.getItem('user-theme-choice') === 'system') applySystemTheme();
+  });
+
+  // --- APP LOGIC ---
+  function setMode(mode) {
+    if (editingIndex !== null) return;
+    currentMode = mode;
+    document.getElementById('btnNoteMode').classList.toggle('active', mode === 'note');
+    document.getElementById('btnJournalMode').classList.toggle('active', mode === 'journal');
+    const label = document.getElementById('contentLabel');
+    const area = document.getElementById('mainContent');
+    const subBtn = document.getElementById('submitBtn');
+    if (mode === 'note') {
+      label.innerText = "Moment Content:"; area.rows = 3; area.placeholder = "Quick thought..."; subBtn.innerText = "Save Note";
+    } else {
+      label.innerText = "Journal Summary:"; area.rows = 8; area.placeholder = "Reflection..."; subBtn.innerText = "Save Journal Entry";
+    }
+  }
+
+  function render() {
+    const display = document.getElementById('display');
+    const filter = document.getElementById('viewFilter').value;
+    display.innerHTML = '';
+    [...logs].reverse().forEach((item, revIdx) => {
+      const idx = logs.length - 1 - revIdx;
+      if (filter !== 'all' && item.type !== filter) return;
+      const div = document.createElement('div');
+      div.className = `entry type-${item.type}`;
+      const isLong = item.content.length > 400 || item.content.split('\n').length > 5;
+      div.innerHTML = `
+        <div class="entry-header">
+          <div><span class="type-tag tag-${item.type}">${item.type}</span><strong>${item.date}</strong></div>
+          <div>P:${item.p}% S:${item.s}% E:${item.e}% | 
+            <span style="color:#3498db; cursor:pointer" onclick="edit(${idx})">Edit</span> | 
+            <span style="color:#e74c3c; cursor:pointer" onclick="remove(${idx})">Delete</span>
+          </div>
+        </div>
+        ${isLong ? `<span class="toggle-btn" id="t-${idx}" onclick="toggle(${idx})">↓ Read More</span>` : ''}
+        <div id="c-${idx}" class="content-area ${isLong ? 'collapsed' : ''}">${item.content}</div>
+      `;
+      display.appendChild(div);
+    });
+  }
+
+  window.toggle = (i) => {
+    const el = document.getElementById(`c-${i}`);
+    const btn = document.getElementById(`t-${i}`);
+    const isCol = el.classList.toggle('collapsed');
+    btn.innerText = isCol ? '↓ Read More' : '↑ Show Less';
+  };
+
+  document.getElementById('logForm').onsubmit = (e) => {
+    e.preventDefault();
+    const data = {
+      type: currentMode,
+      p: document.getElementById('p').value,
+      s: document.getElementById('s').value,
+      e: document.getElementById('e').value,
+      content: document.getElementById('mainContent').value,
+      date: editingIndex !== null ? logs[editingIndex].date : new Date().toLocaleString()
+    };
+    if (editingIndex !== null) logs[editingIndex] = data;
+    else logs.push(data);
+    save(); resetForm();
+  };
+
+  window.edit = (i) => {
+    const item = logs[i]; setMode(item.type);
+    document.getElementById('p').value = item.p; document.getElementById('s').value = item.s;
+    document.getElementById('e').value = item.e; document.getElementById('mainContent').value = item.content;
+    editingIndex = i; document.getElementById('submitBtn').innerText = "Update " + item.type;
+    document.getElementById('cancelBtn').style.display = "inline-block"; window.scrollTo({top:0, behavior:'smooth'});
+  };
+
+  window.remove = (i) => { if(confirm("Delete this entry?")) { logs.splice(i,1); save(); } };
+  function save() { localStorage.setItem('batteryLogsSplit', JSON.stringify(logs)); render(); }
+  function resetForm() {
+    editingIndex = null; document.getElementById('logForm').reset();
+    setMode('note'); document.getElementById('cancelBtn').style.display = "none";
+  }
+
+  window.exportData = () => {
+    const blob = new Blob([JSON.stringify(logs, null, 2)], {type: 'application/json'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `logs_backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
+  };
+
+  window.importData = (e) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => { logs = JSON.parse(ev.target.result); save(); };
+    reader.readAsText(e.target.files[0]);
+  };
+
+  render();
+</script>
+</body>
+</html>
